@@ -1,0 +1,90 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <h1>Borrowing Requests</h1>
+  <div class="container mt-4 px-0">
+    {% if borrowing_list %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th scope="col">Book Copy</th>
+            <th scope="col">Borrower</th>
+            <th scope="col">Start Date - Due Date</th>
+            <th scope="col">Status</th>
+            <th scope="col">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for borrowing in borrowing_list %}
+            <tr class="align-middle {% if borrowing.is_overdue %} table-danger {% endif %}" style="height:50px">
+              <td scope="row">
+                <a href="{% url 'book-detail' borrowing.book_copy.book.pk %}">{{ borrowing.book_copy }}</a>
+              </td>
+              <td>
+                {{ borrowing.borrower }}
+              </td>
+              <td>
+                {{ borrowing.start_date }} - {{ borrowing.due_date }}
+              </td>
+              <td>
+                <span
+                  class="{% if borrowing.is_overdue %} text-danger {% endif %}"
+                  data-toggle="tooltip"
+                  title="{% if borrowing.decline_reason %}
+                            Decline reason: {{ borrowing.decline_reason }}
+                        {% elif borrowing.is_overdue %}
+                            Overdue!
+                        {% endif %}">
+                  {% if borrowing.status == 'd' %}
+                    <u>{{ borrowing.get_status_display }}</u>
+                  {% else %}
+                    {{ borrowing.get_status_display }}
+                  {% endif %}
+                </span>
+              </td>
+              <td class="">
+                {% if borrowing.status == 'p' %}
+                  <div class="row">
+                    <div class="col">
+                      <form action="{% url 'borrowing-approve' borrowing.id %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        {% if borrowing.book_copy.status == 'a' %}
+                          <button class="btn btn-success" type="submit">Approve</button>
+                        {% else %}
+                          <div
+                            class="d-inline-block"
+                            data-toggle="tooltip"
+                            title="Cannot approve this request because the book copy is not available!">
+                            <button class="btn btn-success disabled" type="submit">Approve</button>
+                          </div>
+                        {% endif %}
+                      </form>
+                    </div>
+                    <div class="col">
+                      <form action="{% url 'borrowing-decline' borrowing.id %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                          <button class="btn btn-danger" type="submit">Decline</button>
+                      </form>
+                    </div>
+                  </div>
+                {% elif borrowing.status == 'a' %}
+                  <form action="{% url 'borrowing-start' borrowing.id %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                      <button class="btn btn-warning" type="submit">Mark as Borrowing</button>
+                  </form>
+                {% elif borrowing.status == 'b' %}
+                  <form action="{% url 'borrowing-end' borrowing.id %}" method="post" class="d-inline">
+                    {% csrf_token %}
+                      <button class="btn btn-success" type="submit">Mark as Returned</button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>There are no books borrowed.</p>
+    {% endif %}
+  </div>
+{% endblock%}

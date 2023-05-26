@@ -1,0 +1,90 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="container px-0">
+    <div class="row">
+      <div class="col">
+        <h1>{{ book.title }}</h1>
+      </div>
+      {% if user.is_staff %}
+        <div class="col-1">
+          <a class="btn btn-warning" href="{% url 'book-update' book.id %}">Update</a>
+        </div>
+        <div class="col-1">
+          <a class="btn btn-danger" href="{% url 'book-delete' book.id %}">Delete</a>
+        </div>
+      {% endif %} 
+    </div>
+  </div>
+  
+  <div>
+    <p><strong>Author:</strong> <a class="text-decoration-none" href="{% url 'author-detail' book.author.id %}">{{ book.author }}</a></p>
+    <p><strong>Summary:</strong> {{ book.summary }}</p>
+    <p><strong>ISBN:</strong> {{ book.isbn }}</p>
+    <p><strong>Language:</strong> {{ book.language }}</p>
+    <p><strong>Genre:</strong> {{ book.genre.all|join:", " }}</p>
+    <p><strong>Average rating:</strong> {{ book.get_average_rating }}</p>
+    <p><strong>Number of available copies:</strong>
+      {{ book.get_number_of_available_copies }}/{{ book.bookcopy_set.all.count }}
+    </p>
+  </div>
+
+  <hr>
+  <div class="container mt-4">
+    <h4>Book copies ({{ book.bookcopy_set.all.count }})</h4>
+    {% if not book.bookcopy_set %}
+      <p>No copy yet!</p>
+    {% else %}
+      {% for copy in book.bookcopy_set.all %}
+        <div class="row py-2">
+          <div class="col-1">
+            <span
+              class="{% if copy.status == 'a' %}
+                      text-success
+                    {% elif copy.status == 'm' %}
+                      text-danger
+                    {% else %}
+                      text-warning
+                    {% endif %}">
+              {{ copy.get_status_display }}
+            </span>
+          </div>
+          <div class="col">
+            published by <i>{{ copy.publisher }}</i>
+          </div>
+          <div class="col-2 text-end">
+            <a class="btn {% if copy.status == 'a' %} btn-primary {% else %} btn-secondary disabled {% endif %}"
+              href="{% url 'borrowing-create' book.id copy.id %}">
+              Borrow this copy
+            </a>
+          </div>
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+  
+  <div class="container mt-5">
+    <div class="row">
+      <div class="col">
+        <h4>Reviews ({{ book.review_set.all.count }})</h4>
+      </div>
+      {% if user.is_authenticated %}
+        <div class="col text-end">
+          <a class="btn btn-primary" href="{% url 'review-create' book.id %}">Add new review</a>
+        </div>
+      {% endif %}
+      </div>
+    </div>
+    {% if not book.review_set.all %}
+      <p>No review yet!</p>
+    {% else %}
+      {% for review in book.review_set.all%}
+        <div class="row p-2">
+          <p class="mb-0"><strong>{{ review.user }}</strong> - <small>{{ review.created_at }}</small></p>
+          <p class="mb-0">Rated: {{ review.point }}/5 </p>
+          <p>{{ review.comment }}</p>
+        </div>
+      {% endfor %}
+    {% endif %}
+  </div>
+{% endblock %}

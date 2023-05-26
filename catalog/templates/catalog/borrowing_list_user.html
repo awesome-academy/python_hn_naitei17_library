@@ -1,0 +1,58 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+    <h1>Borrowing History</h1>
+
+    <div class="container mt-4 px-0">
+      {% if borrowing_list %}
+        <table class="table">
+          <thead>
+            <tr>
+              <th scope="col">Book Copy</th>
+              <th scope="col">Start Date - Due Date</th>
+              <th scope="col">Status</th>
+              <th scope="col">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for borrowing in borrowing_list %}
+              <tr class="align-middle {% if borrowing.is_overdue %} table-danger {% endif %}" style="height:50px">
+                <td scope="row">
+                  <a href="{% url 'book-detail' borrowing.book_copy.book.pk %}">{{ borrowing.book_copy }}</a>
+                </td>
+                <td>
+                  {{ borrowing.start_date }} - {{ borrowing.due_date }}
+                </td>
+                <td>
+                  <span
+                    class="{% if borrowing.is_overdue %} text-danger {% endif %}"
+                    data-toggle="tooltip"
+                    title="{% if borrowing.decline_reason %}
+                              Decline reason: {{ borrowing.decline_reason }}
+                          {% elif borrowing.is_overdue %}
+                              Overdue!
+                          {% endif %}">
+                    {% if borrowing.status == 'd' %}
+                      <u>{{ borrowing.get_status_display }}</u>
+                    {% else %}
+                      {{ borrowing.get_status_display }}
+                    {% endif %}
+                  </span>
+                </td>
+                <td>
+                  {% if borrowing.status == 'p' %}
+                    <form action="{% url 'borrowing-cancel' borrowing.id %}" method="post" class="d-inline">
+                      {% csrf_token %}
+                      <button class="btn btn-danger" type="submit">Cancel</button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <p>There are no books borrowed.</p>
+      {% endif %}
+    </div>
+{% endblock %}
