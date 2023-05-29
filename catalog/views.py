@@ -19,13 +19,14 @@ from django.db.models import Avg
 from django.views.generic.edit import FormMixin
 from django.contrib import messages
 
-from django.core.mail import send_mail
-from django.core.mail import EmailMultiAlternatives
+from django.core.mail import EmailMultiAlternatives, get_connection
 from django.template.loader import get_template
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AuthenticationForm
 
 from .forms import UserRegisterForm
+from django.conf import settings
+import smtplib
 
 # view file index:
 # 1. INDEX
@@ -65,15 +66,22 @@ def Register(request):
             username = form.cleaned_data.get('username')
             email = form.cleaned_data.get('email')
             ######################### mail system ####################################
-            htmly = get_template('user/Email.html')
-            d = { 'username': username }
-            subject, from_email, to = 'welcome', 'your_email@gmail.com', email
-            html_content = htmly.render(d)
-            msg = EmailMultiAlternatives(subject, html_content, from_email, [to])
-            msg.attach_alternative(html_content, "text/html")
-            msg.send()
-            ##################################################################
-            messages.success(request, f'Your account has been created ! You are now able to log in')
+            with get_connection(  
+                host=settings.EMAIL_HOST, 
+                port=settings.EMAIL_PORT,  
+                username=settings.EMAIL_HOST_USER, 
+                password=settings.EMAIL_HOST_PASSWORD, 
+                use_tls=settings.EMAIL_USE_TLS  
+                ) as connection:  
+                    htmly = get_template('user/Email.html')
+                    d = { 'username': username }
+                    subject, from_email, to = 'welcome', settings.EMAIL_HOST_USER, email
+                    html_content = htmly.render(d)
+                    msg = EmailMultiAlternatives(subject, html_content, from_email, [to], connection=connection)
+                    msg.attach_alternative(html_content, "text/html")
+                    msg.send()
+                    ##################################################################
+                    messages.success(request, f'Your account has been created ! You are now able to log in')
             return redirect('login')
     else:
         form = UserRegisterForm()
@@ -284,6 +292,18 @@ def approve_borrowing(request, pk):
 
             book_copy.status = 'r' # reserved
             book_copy.save()
+            # send email to user
+            ######################### mail system ####################################
+            email_server = smtplib.SMTP('smtp.gmail.com', 587)
+            email_server.starttls()
+            email_server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+            subject = 'Borrowed success!!!'
+            message = 'You have borrowed a book successfully'
+            content = f'Subject: {subject}\n\n{message}. Book name: {book_copy.book.title}'
+            to = [borrowing.borrower.email]
+            email_server.sendmail(settings.EMAIL_HOST_USER, to, content)
+            email_server.quit()
+            ##################################################################
         else:
             messages.info(request, 'Cannot approve this request because the book copy is not available!')
 
@@ -301,11 +321,23 @@ def decline_borrowing(request, pk):
 
     if request.method == 'POST':
         form = DeclineBorrowingForm(request.POST, initial = initial_dict)
-
         if form.is_valid():
             borrowing = form.save(commit=False)
             borrowing.status = 'd' # declined
             borrowing.save()
+            ######################### mail system ####################################
+            email_server = smtplib.SMTP('smtp.gmail.com', 587)
+            email_server.starttls()
+            email_server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+            subject = 'Borrowed failed!!!'
+            message = 'You cant borrowed a book'
+            # get declined reason
+            declined_reason = form.cleaned_data['decline_reason']
+            content = f'Subject: {subject}\n\n{message}.\n\nReason: {declined_reason}'
+            to = [borrowing.borrower.email]
+            email_server.sendmail(settings.EMAIL_HOST_USER, to, content)
+            email_server.quit()
+            ##################################################################
             return HttpResponseRedirect(reverse('all-borrowing'))
 
     else:
@@ -340,5 +372,22 @@ def end_borrowing(request, pk):
         
         book_copy.status = 'a' # availabel
         book_copy.save()
+
+    return HttpResponseRedirect(reverse('all-borrowing'))
+
+def request_return_book(request, pk):
+    borrowing = get_object_or_404(Borrowing, pk=pk)
+    if request.method == 'POST':
+        ######################### mail system ####################################
+        email_server = smtplib.SMTP('smtp.gmail.com', 587)
+        email_server.starttls()
+        email_server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+        subject = 'Overdue borrowing book!!!'
+        message = 'You must return a book because of due date'
+        content = f'Subject: {subject}\n\n{message}.\n\nReturn Date: {borrowing.due_date}\n\nToday: {datetime.date.today()}'
+        to = [borrowing.borrower.email]
+        email_server.sendmail(settings.EMAIL_HOST_USER, to, content)
+        email_server.quit()
+        ##################################################################
 
     return HttpResponseRedirect(reverse('all-borrowing'))
