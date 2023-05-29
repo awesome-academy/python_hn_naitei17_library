@@ -20,10 +20,15 @@ from django.urls import include
 from django.views.generic import RedirectView
 from django.conf import settings
 from django.conf.urls.static import static
-
+from django.contrib.auth import views as auth
+from catalog import views as catalog_view
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('catalog/', include('catalog.urls')),
     path('', RedirectView.as_view(url='catalog/')),
-    path('accounts/', include('django.contrib.auth.urls')),
+    path('login/', catalog_view.Login, name = 'login'),
+    path('logout/', auth.LogoutView.as_view(template_name ='index.html'), name = 'logout'),
+    path('register/', catalog_view.Register, name = 'register'),
+
+    # path('accounts/', include('django.contrib.auth.urls')),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

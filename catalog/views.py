@@ -6,7 +6,7 @@ from .models import Book, Author, Genre, Borrowing, BookCopy
 
 import datetime
 
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 
@@ -19,6 +19,14 @@ from django.db.models import Avg
 from django.views.generic.edit import FormMixin
 from django.contrib import messages
 
+from django.core.mail import send_mail
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import get_template
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.forms import AuthenticationForm
+
+from .forms import UserRegisterForm
+
 # view file index:
 # 1. INDEX
 # 2. BOOK
@@ -26,7 +34,7 @@ from django.contrib import messages
 # 4. REVIEW BOOK
 # 5. BORROWING BOOK
 
-############  1. INDEX  ############
+############  1. INDEX + LOGIN + REGISTER  ############
 
 def index(request):
     """View function for home page of site."""
@@ -49,6 +57,42 @@ def index(request):
 
     return render(request, 'index.html', context=context)
 
+def Register(request):
+    if request.method == 'POST':
+        form = UserRegisterForm(request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data.get('username')
+            email = form.cleaned_data.get('email')
+            ######################### mail system ####################################
+            htmly = get_template('user/Email.html')
+            d = { 'username': username }
+            subject, from_email, to = 'welcome', 'your_email@gmail.com', email
+            html_content = htmly.render(d)
+            msg = EmailMultiAlternatives(subject, html_content, from_email, [to])
+            msg.attach_alternative(html_content, "text/html")
+            msg.send()
+            ##################################################################
+            messages.success(request, f'Your account has been created ! You are now able to log in')
+            return redirect('login')
+    else:
+        form = UserRegisterForm()
+    return render(request, 'user/register.html', {'form': form, 'title':'register here'})
+
+
+def Login(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username = username, password = password)
+        if user is not None:
+            form = login(request, user)
+            messages.success(request, f' welcome {username} !!')
+            return redirect('index')
+        else:
+            messages.info(request, f'account done not exit plz sign in')
+    form = AuthenticationForm()
+    return render(request, 'user/login.html', {'form':form, 'title':'log in'})
 
 ############  2. BOOK  ############
 
@@ -64,15 +108,12 @@ class BookListView(generic.ListView, FormMixin):
         if form.is_valid():
             title = form.cleaned_data['title']
             author = form.cleaned_data['author']
-            isbn = form.cleaned_data['isbn']
             genre = form.cleaned_data['genre']
             language = form.cleaned_data['language']
 
             book_list = self.model.objects.filter(title__icontains=title)
             if author:
                 book_list = book_list.filter(author__name__icontains=author)
-            if isbn:
-                book_list = book_list.filter(isbn__icontains=isbn)
             if genre:
                 book_list = book_list.filter(genre__in=genre)
             if language:
