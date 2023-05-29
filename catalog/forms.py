@@ -37,7 +37,7 @@ class SearchBookForm(ModelForm):
         fields = ['title', 'author', 'genre', 'language']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
-            'author': forms.TextInput(attrs={'class': 'form-control'}),
+            'author': forms.Select(attrs={'class': 'form-select'}),
             'genre': forms.SelectMultiple(attrs={'class': 'form-select'}),
             'language': forms.Select(attrs={'class': 'form-select'}),
         }
