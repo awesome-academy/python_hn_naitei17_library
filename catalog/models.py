@@ -161,3 +161,4 @@ class Borrowing(models.Model):
     @property
     def is_overdue(self):
         return bool(date.today() > self.due_date) and (self.status != 'r')
+        

@@ -66,22 +66,16 @@ def Register(request):
             username = form.cleaned_data.get('username')
             email = form.cleaned_data.get('email')
             ######################### mail system ####################################
-            with get_connection(  
-                host=settings.EMAIL_HOST, 
-                port=settings.EMAIL_PORT,  
-                username=settings.EMAIL_HOST_USER, 
-                password=settings.EMAIL_HOST_PASSWORD, 
-                use_tls=settings.EMAIL_USE_TLS  
-                ) as connection:  
-                    htmly = get_template('user/Email.html')
-                    d = { 'username': username }
-                    subject, from_email, to = 'welcome', settings.EMAIL_HOST_USER, email
-                    html_content = htmly.render(d)
-                    msg = EmailMultiAlternatives(subject, html_content, from_email, [to], connection=connection)
-                    msg.attach_alternative(html_content, "text/html")
-                    msg.send()
-                    ##################################################################
-                    messages.success(request, f'Your account has been created ! You are now able to log in')
+            email_server = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT)
+            email_server.starttls()
+            email_server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+            subject = 'Account created successfully!!!'
+            message = 'Welcome\n\nYour account has been created ! You are now able to log in'
+            content = f'Subject: {subject}\n\n{message}.\n\nLogin here: http://127.0.0.1:8000/login/'
+            to = [email]
+            email_server.sendmail(settings.EMAIL_HOST_USER, to, content)
+            email_server.quit()
+            ##################################################################
             return redirect('login')
     else:
         form = UserRegisterForm()
@@ -294,7 +288,7 @@ def approve_borrowing(request, pk):
             book_copy.save()
             # send email to user
             ######################### mail system ####################################
-            email_server = smtplib.SMTP('smtp.gmail.com', 587)
+            email_server = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT)
             email_server.starttls()
             email_server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
             subject = 'Borrowed success!!!'
@@ -326,7 +320,7 @@ def decline_borrowing(request, pk):
             borrowing.status = 'd' # declined
             borrowing.save()
             ######################### mail system ####################################
-            email_server = smtplib.SMTP('smtp.gmail.com', 587)
+            email_server = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT)
             email_server.starttls()
             email_server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
             subject = 'Borrowed failed!!!'
@@ -379,7 +373,7 @@ def request_return_book(request, pk):
     borrowing = get_object_or_404(Borrowing, pk=pk)
     if request.method == 'POST':
         ######################### mail system ####################################
-        email_server = smtplib.SMTP('smtp.gmail.com', 587)
+        email_server = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT)
         email_server.starttls()
         email_server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
         subject = 'Overdue borrowing book!!!'
@@ -391,3 +385,4 @@ def request_return_book(request, pk):
         ##################################################################
 
     return HttpResponseRedirect(reverse('all-borrowing'))
+    
