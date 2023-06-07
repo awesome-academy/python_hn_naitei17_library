@@ -1,0 +1,43 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="container px-0">
+    <div class="row">
+      <div class="col">
+        <div class="row">
+          <div class="col">
+            <h1>{{ author }} </h1>
+            <p>({{author.date_of_birth}} - {% if author.date_of_death %}{{author.date_of_death}}{% endif %})</p>
+          </div>
+        </div>
+      </div>
+      {% if user.is_staff %}
+        <div class="col-1">
+          <a class="btn btn-warning" href="{% url 'author-update' author.id %}">Update</a>
+        </div>
+        <div class="col-1">
+          <a class="btn btn-danger" href="{% url 'author-delete' author.id %}">Delete</a>
+        </div>
+      {% endif %} 
+    </div>
+  </div>
+  
+  <hr>
+  <div class="container mt-4">
+    <h4>Books ({{ author.book_set.all.count }})</h4>
+    <div>
+    {% if not author.book_set.all %}
+        <p>No book yet!</p>
+    {% else %}
+      {% for book in author.book_set.all %}
+        <div class="row">
+          <p class="pb-0 mb-0">
+            <a class="text-decoration-none" href="{% url 'book-detail' book.pk %}">{{book}}</a>
+          </p>
+          <p>{{book.summary}}</p>
+        </div>
+      {% endfor %}
+    {% endif %}
+    </div>
+  </div>
+{% endblock %}

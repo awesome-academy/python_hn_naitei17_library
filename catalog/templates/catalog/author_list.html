@@ -1,0 +1,44 @@
+{% extends "base_generic.html" %}
+
+{% block content %}
+  <div class="container px-0">
+    <div class="row">
+      <div class="col">
+        <h1>Author List</h1>
+      </div>
+      {% if user.is_staff %}
+        <div class="col text-end">
+          <a class="btn btn-primary my-3" href="{% url 'author-create' %}">Add new author</a>
+        </div>
+      {% endif %} 
+    </div>
+  </div>
+
+  <form action="" method="get">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button class="btn btn-primary" type="submit">Search</button>
+  </form>
+
+  {% if author_list %}
+    <div class="container mt-4">
+      {% for author in author_list %}
+        <div class="row p-2">
+          <div class="col">
+            <a class="text-decoration-none" href="{{ author.get_absolute_url }}">{{ author }}</a>
+          </div>
+          {% if user.is_staff %}
+            <div class="col-1">
+              <a class="btn btn-warning" href="{% url 'author-update' author.id %}">Update</a>
+            </div>
+            <div class="col-1">
+              <a class="btn btn-danger" href="{% url 'author-delete' author.id %}">Delete</a>
+            </div>
+          {% endif %} 
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p>There are no authors available.</p>
+  {% endif %}  
+{% endblock %}
