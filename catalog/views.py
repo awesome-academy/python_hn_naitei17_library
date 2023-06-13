@@ -6,7 +6,7 @@ from .models import Book, Author, Genre, Borrowing, BookCopy
 
 import datetime
 
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 
@@ -19,6 +19,15 @@ from django.db.models import Avg
 from django.views.generic.edit import FormMixin
 from django.contrib import messages
 
+from django.core.mail import EmailMultiAlternatives, get_connection
+from django.template.loader import get_template
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.forms import AuthenticationForm
+
+from .forms import UserRegisterForm
+from django.conf import settings
+import smtplib
+
 # view file index:
 # 1. INDEX
 # 2. BOOK
@@ -26,7 +35,7 @@ from django.contrib import messages
 # 4. REVIEW BOOK
 # 5. BORROWING BOOK
 
-############  1. INDEX  ############
+############  1. INDEX + LOGIN + REGISTER  ############
 
 def index(request):
     """View function for home page of site."""
@@ -49,6 +58,43 @@ def index(request):
 
     return render(request, 'index.html', context=context)
 
+def Register(request):
+    if request.method == 'POST':
+        form = UserRegisterForm(request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data.get('username')
+            email = form.cleaned_data.get('email')
+            ######################### mail system ####################################
+            email_server = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT)
+            email_server.starttls()
+            email_server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+            subject = 'Account created successfully!!!'
+            message = 'Welcome\n\nYour account has been created ! You are now able to log in'
+            content = f'Subject: {subject}\n\n{message}.\n\nLogin here: http://127.0.0.1:8000/login/'
+            to = [email]
+            email_server.sendmail(settings.EMAIL_HOST_USER, to, content)
+            email_server.quit()
+            ##################################################################
+            return redirect('login')
+    else:
+        form = UserRegisterForm()
+    return render(request, 'user/register.html', {'form': form, 'title':'register here'})
+
+
+def Login(request):
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        user = authenticate(request, username = username, password = password)
+        if user is not None:
+            form = login(request, user)
+            messages.success(request, f' welcome {username} !!')
+            return redirect('index')
+        else:
+            messages.info(request, f'account done not exit plz sign in')
+    form = AuthenticationForm()
+    return render(request, 'user/login.html', {'form':form, 'title':'log in'})
 
 ############  2. BOOK  ############
 
@@ -64,15 +110,12 @@ class BookListView(generic.ListView, FormMixin):
         if form.is_valid():
             title = form.cleaned_data['title']
             author = form.cleaned_data['author']
-            isbn = form.cleaned_data['isbn']
             genre = form.cleaned_data['genre']
             language = form.cleaned_data['language']
 
             book_list = self.model.objects.filter(title__icontains=title)
             if author:
                 book_list = book_list.filter(author__name__icontains=author)
-            if isbn:
-                book_list = book_list.filter(isbn__icontains=isbn)
             if genre:
                 book_list = book_list.filter(genre__in=genre)
             if language:
@@ -243,6 +286,18 @@ def approve_borrowing(request, pk):
 
             book_copy.status = 'r' # reserved
             book_copy.save()
+            # send email to user
+            ######################### mail system ####################################
+            email_server = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT)
+            email_server.starttls()
+            email_server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+            subject = 'Borrowed success!!!'
+            message = 'You have borrowed a book successfully'
+            content = f'Subject: {subject}\n\n{message}. Book name: {book_copy.book.title}'
+            to = [borrowing.borrower.email]
+            email_server.sendmail(settings.EMAIL_HOST_USER, to, content)
+            email_server.quit()
+            ##################################################################
         else:
             messages.info(request, 'Cannot approve this request because the book copy is not available!')
 
@@ -260,11 +315,23 @@ def decline_borrowing(request, pk):
 
     if request.method == 'POST':
         form = DeclineBorrowingForm(request.POST, initial = initial_dict)
-
         if form.is_valid():
             borrowing = form.save(commit=False)
             borrowing.status = 'd' # declined
             borrowing.save()
+            ######################### mail system ####################################
+            email_server = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT)
+            email_server.starttls()
+            email_server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+            subject = 'Borrowed failed!!!'
+            message = 'You cant borrowed a book'
+            # get declined reason
+            declined_reason = form.cleaned_data['decline_reason']
+            content = f'Subject: {subject}\n\n{message}.\n\nReason: {declined_reason}'
+            to = [borrowing.borrower.email]
+            email_server.sendmail(settings.EMAIL_HOST_USER, to, content)
+            email_server.quit()
+            ##################################################################
             return HttpResponseRedirect(reverse('all-borrowing'))
 
     else:
@@ -301,3 +368,21 @@ def end_borrowing(request, pk):
         book_copy.save()
 
     return HttpResponseRedirect(reverse('all-borrowing'))
+
+def request_return_book(request, pk):
+    borrowing = get_object_or_404(Borrowing, pk=pk)
+    if request.method == 'POST':
+        ######################### mail system ####################################
+        email_server = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT)
+        email_server.starttls()
+        email_server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+        subject = 'Overdue borrowing book!!!'
+        message = 'You must return a book because of due date'
+        content = f'Subject: {subject}\n\n{message}.\n\nReturn Date: {borrowing.due_date}\n\nToday: {datetime.date.today()}'
+        to = [borrowing.borrower.email]
+        email_server.sendmail(settings.EMAIL_HOST_USER, to, content)
+        email_server.quit()
+        ##################################################################
+
+    return HttpResponseRedirect(reverse('all-borrowing'))
+    

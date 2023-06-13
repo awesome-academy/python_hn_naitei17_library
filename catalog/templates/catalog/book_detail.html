@@ -30,7 +30,7 @@
   </div>
 
   <hr>
-  <div class="container mt-4">
+  <div class="container px-0">
     <h4>Book copies ({{ book.bookcopy_set.all.count }})</h4>
     {% if not book.bookcopy_set %}
       <p>No copy yet!</p>
@@ -63,7 +63,7 @@
     {% endif %}
   </div>
   
-  <div class="container mt-5">
+  <div>
     <div class="row">
       <div class="col">
         <h4>Reviews ({{ book.review_set.all.count }})</h4>

@@ -5,8 +5,18 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 from django.forms import ModelForm
-
+from django.contrib.auth.forms import UserCreationForm
 from .models import Book, Author, Review, Borrowing
+from django.contrib.auth.models import User
+
+class UserRegisterForm(UserCreationForm):
+    email = forms.EmailField()
+    phone_no = forms.CharField(max_length = 20)
+    first_name = forms.CharField(max_length = 20)
+    last_name = forms.CharField(max_length = 20)
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'phone_no', 'password1', 'password2']
 
 class SearchAuthorForm(ModelForm):
     class Meta:
@@ -24,11 +34,10 @@ class SearchAuthorForm(ModelForm):
 class SearchBookForm(ModelForm):
     class Meta:
         model = Book
-        fields = ['title', 'author', 'isbn', 'genre', 'language']
+        fields = ['title', 'author', 'genre', 'language']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
-            'author': forms.TextInput(attrs={'class': 'form-control'}),
-            'isbn': forms.TextInput(attrs={'class': 'form-control'}),
+            'author': forms.Select(attrs={'class': 'form-select'}),
             'genre': forms.SelectMultiple(attrs={'class': 'form-select'}),
             'language': forms.Select(attrs={'class': 'form-select'}),
         }
