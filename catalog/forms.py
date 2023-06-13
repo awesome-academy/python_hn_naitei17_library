@@ -46,7 +46,6 @@ class SearchBookForm(ModelForm):
         super(SearchBookForm, self).__init__(*args, **kwargs)
         for field in self.fields:
             self.fields[field].required = False
-
 class ReviewBookForm(forms.ModelForm):
     class Meta:
         model = Review

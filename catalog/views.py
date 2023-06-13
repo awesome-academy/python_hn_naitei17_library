@@ -61,6 +61,7 @@ def Register(request):
         form = UserRegisterForm(request.POST)
         if form.is_valid():
             form.save()
+            username = form.cleaned_data.get('username')
             email = form.cleaned_data.get('email')
             ######################### mail system ####################################
             email_server = smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT)
