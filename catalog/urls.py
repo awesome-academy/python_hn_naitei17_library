@@ -1,4 +1,5 @@
 from django.urls import path
+from django.conf import settings
 from . import views
 
 # guest
@@ -38,6 +39,7 @@ urlpatterns += [
     path('borrowing/<int:pk>/decline/', views.decline_borrowing, name='borrowing-decline'),
     path('borrowing/<int:pk>/start/', views.start_borrowing, name='borrowing-start'),
     path('borrowing/<int:pk>/end/', views.end_borrowing, name='borrowing-end'),
+    path('borrowing/<int:pk>/request-return/', views.request_return_book, name='borrowing-request-return'),
 ]
 
 urlpatterns += [

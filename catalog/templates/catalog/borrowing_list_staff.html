@@ -63,7 +63,7 @@
                     <div class="col">
                       <form action="{% url 'borrowing-decline' borrowing.id %}" method="post" class="d-inline">
                         {% csrf_token %}
-                          <button class="btn btn-danger" type="submit">Decline</button>
+                          <button class="btn btn-warning" type="submit">Decline</button>
                       </form>
                     </div>
                   </div>
@@ -73,10 +73,27 @@
                       <button class="btn btn-warning" type="submit">Mark as Borrowing</button>
                   </form>
                 {% elif borrowing.status == 'b' %}
-                  <form action="{% url 'borrowing-end' borrowing.id %}" method="post" class="d-inline">
-                    {% csrf_token %}
+                  {% if borrowing.is_overdue %}
+                  <div class="row">
+                    <div class="col">
+                      <form action="{% url 'borrowing-request-return' borrowing.id %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button class="btn btn-danger" type="submit">Request return</button>
+                      </form>
+                    </div>
+                    <div class="col">
+                      <form action="{% url 'borrowing-end' borrowing.id %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button class="btn btn-success" type="submit">Mark as Returned</button>
+                      </form>
+                    </div>
+                  </div>
+                  {% else %}
+                    <form action="{% url 'borrowing-end' borrowing.id %}" method="post" class="d-inline">
+                      {% csrf_token %}
                       <button class="btn btn-success" type="submit">Mark as Returned</button>
-                  </form>
+                    </form>
+                  {% endif %}
                 {% endif %}
               </td>
             </tr>

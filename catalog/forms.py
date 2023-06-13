@@ -122,4 +122,3 @@ class DeclineBorrowingForm(forms.ModelForm):
         self.fields['start_date'].disabled = True
         self.fields['due_date'].disabled = True
         self.fields['decline_reason'].required = True
-

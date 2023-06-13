@@ -6,7 +6,7 @@
   <div class="container px-0">
     <div class="row">
       <div class="col">
-        <h1>Book List</h1>
+        <h2>Search Book</h2>
       </div>
       {% if user.is_staff %}
       <div class="col text-end">
@@ -19,10 +19,14 @@
   <form action="" method="get">
     {% csrf_token %}
     {{ form.as_p }}
-    <button class="btn btn-primary" type="submit">Submit</button>
+    <div class="text-center">
+        <button class="btn btn-primary" type="submit">Submit</button>
+    </div>
   </form>
   
   {% if book_list %}
+
+  <h2>List Book</h2>
   <div class="container mt-4">
     {% for book in book_list %}
       <div class="row p-2">
