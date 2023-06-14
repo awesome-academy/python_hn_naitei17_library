@@ -19,8 +19,6 @@ from django.db.models import Avg
 from django.views.generic.edit import FormMixin
 from django.contrib import messages
 
-from django.core.mail import EmailMultiAlternatives, get_connection
-from django.template.loader import get_template
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.forms import AuthenticationForm
 
@@ -106,13 +104,11 @@ class BookListView(generic.ListView, FormMixin):
 
     def get_queryset(self):
         form = SearchBookForm(self.request.GET)
-
         if form.is_valid():
             title = form.cleaned_data['title']
             author = form.cleaned_data['author']
             genre = form.cleaned_data['genre']
             language = form.cleaned_data['language']
-
             book_list = self.model.objects.filter(title__icontains=title)
             if author:
                 book_list = book_list.filter(author__name__icontains=author)
