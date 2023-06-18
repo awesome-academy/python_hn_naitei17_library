@@ -102,7 +102,6 @@ class BorrowBookForm(forms.ModelForm):
         return data
 
 class DeclineBorrowingForm(forms.ModelForm):
-
     class Meta:
         model = Borrowing
         fields = ['book_copy', 'borrower', 'start_date', 'due_date', 'decline_reason']
