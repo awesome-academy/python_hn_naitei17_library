@@ -23,8 +23,6 @@ from django.contrib.auth.forms import AuthenticationForm
 from .forms import UserRegisterForm
 from django.conf import settings
 import smtplib
-from rest_framework.authtoken.models import Token
-
 
 ################## API #####################
 from rest_framework import generics, permissions

@@ -24,8 +24,7 @@ class RegisterSerializer(serializers.ModelSerializer):
 class BookSerializer(serializers.ModelSerializer):
     class Meta:
         model = Book
-        fields = '__all__'
-
+        fields = ('title', 'summary', 'author', 'genre', 'language')
 
 class ProcessBorrowBookSerializer(serializers.ModelSerializer):
     class Meta:
@@ -35,4 +34,4 @@ class ProcessBorrowBookSerializer(serializers.ModelSerializer):
 class BorrowBookSerializer(serializers.ModelSerializer):
     class Meta:
         model = Borrowing
-        fields = '__all__'
+        fields = ('borrower', 'book_copy', 'start_date', 'due_date', 'decline_reason', 'status')

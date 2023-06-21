@@ -23,9 +23,6 @@ from django.conf.urls.static import static
 from django.contrib.auth import views as auth
 from catalog import views as catalog_view
 
-from rest_framework.routers import DefaultRouter
-
-router = DefaultRouter()
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -34,5 +31,4 @@ urlpatterns = [
     path('login/', catalog_view.Login, name = 'login'),
     path('logout/', auth.LogoutView.as_view(template_name ='index.html'), name = 'logout'),
     path('register/', catalog_view.Register, name = 'register'),
-    path('api/', include(router.urls)),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

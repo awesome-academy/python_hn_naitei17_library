@@ -24,12 +24,12 @@ urlpatterns = [
 ]
 
 urlpatterns += [
-    path('api/register/', views.RegisterAPI.as_view(), name='register'),
-    path('api/login/', views.LoginAPI.as_view(), name='login'),
-    path('api/search-book/', views.SearchBookAPI.as_view(), name='search-book'),
-    path('api/create-borrow-book/', views.BorrowBookAPI.as_view(), name='borrow-book'),
-    path('api/pending-borrowing/', views.PendingBorrowingAPI.as_view(), name='all-borrowing'),
-    path('api/pending-borrowing/update-status/<int:id>', views.ProcessBorrowBookAPI.as_view(), name='update-status'),
+    path('api/v1/register/', views.RegisterAPI.as_view(), name='api-register'),
+    path('api/v1/login/', views.LoginAPI.as_view(), name='api-login'),
+    path('api/v1/search-book/', views.SearchBookAPI.as_view(), name='search-book'),
+    path('api/v1/create-borrow-book/', views.BorrowBookAPI.as_view(), name='borrow-book'),
+    path('api/v1/pending-borrowing/', views.PendingBorrowingAPI.as_view(), name='pending-borrowing'),
+    path('api/v1/pending-borrowing/update-status/<int:id>', views.ProcessBorrowBookAPI.as_view(), name='update-status'),
 ]
 
 urlpatterns += [
