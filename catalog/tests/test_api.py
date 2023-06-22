@@ -11,13 +11,13 @@ class RegisterAPITestCase(TestCase):
         self.client = APIClient()
         self.url = reverse('api-register')
 
-
     def test_register_valid_data(self):
         data = {
             'username': 'testuser',
             'password': 'testpassword',
             'email': 'test@gmail.com'
         }
+        num_records_before_register = User.objects.count()
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertIn('user', response.data)
@@ -25,6 +25,10 @@ class RegisterAPITestCase(TestCase):
 
         self.assertEqual(response.data['user']['username'], data['username'])
         self.assertEqual(response.data['user']['email'], data['email'])
+
+        # check records added to database
+        num_records_after_register = User.objects.count()
+        self.assertEqual(num_records_after_register -num_records_before_register, 1)
 
     def test_register_existing_user(self):
         User.objects.create_user(username='testuser', password='password123')
@@ -202,7 +206,6 @@ class BorrowBookAPITestCase(TestCase):
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(response.data['start_date'], ['This field is required.'])
-
 
 class PendingBorrowingAPITestCase(TestCase):
     def setUp(self):
