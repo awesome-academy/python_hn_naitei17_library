@@ -142,8 +142,16 @@ class SearchBookAPITestCase(TestCase):
         response = self.client.get(self.url, query_params)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(len(response.data), 2)
-        self.assertEqual(response.data[0]['author'], 1)
-        self.assertEqual(response.data[0]['language'], 1)
+        book_titles = [book['title'] for book in response.data]
+        self.assertIn(str(self.book1), book_titles)
+        self.assertIn(str(self.book3), book_titles)
+
+        for book in response.data:
+            self.assertEqual(book['author'], 1)
+            self.assertEqual(book['language'], 1)
+            self.assertIn(1, book['genre'])
+
+
 
 class BorrowBookAPITestCase(TestCase):
     def setUp(self):
