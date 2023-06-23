@@ -1,9 +1,7 @@
 from django.shortcuts import render
 from django.views import generic
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from .models import Book, Author, Genre, Borrowing, BookCopy
-
 import datetime
 
 from django.shortcuts import render, get_object_or_404, redirect
@@ -25,6 +23,88 @@ from django.contrib.auth.forms import AuthenticationForm
 from .forms import UserRegisterForm
 from django.conf import settings
 import smtplib
+
+################## API #####################
+from rest_framework import generics, permissions
+from rest_framework.response import Response
+from knox.models import AuthToken
+from .models import Book
+from .serializers import *
+from django.contrib.auth import login
+from rest_framework.authtoken.serializers import AuthTokenSerializer
+from knox.views import LoginView as KnoxLoginView
+from django_filters.rest_framework import DjangoFilterBackend
+
+# Register API
+class RegisterAPI(generics.GenericAPIView):
+    serializer_class = RegisterSerializer
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response({
+            "user": UserSerializer(user, context=self.get_serializer_context()).data,
+            "token": AuthToken.objects.create(user)[1]
+            })
+
+class LoginAPI(KnoxLoginView):
+    permission_classes = (permissions.AllowAny,)
+
+    def post(self, request, format=None):
+        serializer = AuthTokenSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        login(request, user)
+        return super(LoginAPI, self).post(request, format=None)
+
+class SearchBookAPI(generics.ListAPIView):
+    """
+    GET
+    """
+    queryset = Book.objects.all()
+    serializer_class = BookSerializer
+    filter_backends = [DjangoFilterBackend, ]
+    filterset_fields  = ('title', 'author', 'language', 'genre')
+
+class BorrowBookAPI(generics.CreateAPIView):
+    """
+    POST
+    """
+    serializer_class = ProcessBorrowBookSerializer
+    permission_classes = [permissions.AllowAny, ]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        borrow = serializer.save()
+        user = borrow.borrower
+        token = AuthToken.objects.create(user)[1]
+        return Response({
+            "borrow": ProcessBorrowBookSerializer(borrow, context=self.get_serializer_context()).data,
+            "token": token
+            })
+
+class PendingBorrowingAPI(generics.ListAPIView):
+    """
+    GET
+    """
+    queryset = Borrowing.objects.filter(status='p')
+    serializer_class = BorrowBookSerializer
+    permission_classes = [permissions.AllowAny, ]
+
+class ProcessBorrowBookAPI(generics.RetrieveUpdateAPIView):
+    """
+    PUT
+    PATCH
+    """
+    queryset = Borrowing.objects.all()
+    serializer_class = BorrowBookSerializer
+    permission_classes = [permissions.AllowAny]
+    lookup_url_kwarg = 'id'
+
+
+#######################################
 
 # view file index:
 # 1. INDEX
@@ -53,7 +133,6 @@ def index(request):
         'num_genres': num_genres,
         'top_rated_books': top_rated_books,
     }
-
     return render(request, 'index.html', context=context)
 
 def Register(request):
